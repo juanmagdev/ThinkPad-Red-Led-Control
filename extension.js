@@ -77,7 +77,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
 
         // Add a separator and settings action
         this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-        const settingsItem = this.menu.addAction(_('Mensaje en Morse'), () => this._openMorseDialog());
+        const settingsItem = this.menu.addAction(_('Morse Message'), () => this._openMorseDialog());
         settingsItem.visible = Main.sessionMode.allowSettings;
         
         // Would like to read the current state of the led, but it's not possible without root permissions
