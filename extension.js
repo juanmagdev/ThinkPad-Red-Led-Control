@@ -9,77 +9,67 @@ import * as ModalDialog from 'resource:///org/gnome/shell/ui/modalDialog.js';
 
 import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/extension.js';
 
-const COMANDO_APAGADO = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x0a' | sudo dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
-const COMANDO_ENCENDIDO = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x8a' | sudo dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
-const COMANDO_PARPADEO = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\xca' | sudo dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
+const OFF_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x0a' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
+const ON_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x8a' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
+const BLINK_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\xca' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
 
-const ExampleMenuToggle = GObject.registerClass(
-class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
-    _init(extensionObject) {
+const LedControlMenu = GObject.registerClass(
+class LedControlMenu extends QuickSettings.QuickMenuToggle {
+    /**
+     * Initializes the menu toggle for LED control.
+     * This class manages the menu for controlling the LED state (on, off, blinking) within the GNOME Shell's quick settings.
+     * 
+     * @param {Object} extensionObject - The main extension object.
+     * @param {Object} indicator - The indicator object for the menu.
+     */
+    _init(extensionObject, indicator) {
         super._init({
             title: _('Led Control'),
-            subtitle: _('Led Encendido'),
+            subtitle: _('Led On'),
             iconName: 'keyboard-brightness-high-symbolic',
-            toggleMode: true,
+            toggleMode: false,
         });
 
-        // Add a header to the menu
+        this._indicator = indicator;
         this.menu.setHeader('keyboard-brightness-high-symbolic', _('ThinkPad Red Led Control'), _(''));
-
-        // Define menu items with icons
         this._itemsSection = new PopupMenu.PopupMenuSection();
         this._menuItems = [
-            { label: _('  Led Apagado  '), icon: 'keyboard-brightness-off-symbolic', command: COMANDO_APAGADO },
-            { label: _('  Led Encendido  '), icon: 'keyboard-brightness-high-symbolic', command: COMANDO_ENCENDIDO },
-            { label: _('  Led Parpadeando  '), icon: 'keyboard-brightness-medium-symbolic', command: COMANDO_PARPADEO },
+            { label: _('  Led Off  '), icon: 'keyboard-brightness-off-symbolic', command: OFF_COMAND },
+            { label: _('  Led On  '), icon: 'keyboard-brightness-high-symbolic', command: ON_COMAND },
+            { label: _('  Led Blinking  '), icon: 'keyboard-brightness-medium-symbolic', command: BLINK_COMAND },
         ];
 
-        // Create menu items with icons and add them to the menu
         this._menuItems.forEach((item, index) => {
-            // Create a menu item
             const menuItem = new PopupMenu.PopupBaseMenuItem();
-
-            // Create a box layout for the item content
             const box = new St.BoxLayout({ vertical: false, style_class: 'popup-menu-item-content' });
-
-            // Add the icon to the left
             const icon = new St.Icon({ icon_name: item.icon, style_class: 'popup-menu-icon' });
             box.add_child(icon);
-
-            // Add the label in the center
             const label = new St.Label({ text: item.label, x_expand: true, x_align: Clutter.ActorAlign.START });
             box.add_child(label);
-
-            // Add a tick placeholder at the end (right)
             const tick = new St.Icon({ icon_name: 'emblem-ok-symbolic', style_class: 'popup-menu-icon', visible: false });
             box.add_child(tick);
-
-            // Save a reference to the tick icon for later updates
             menuItem._tick = tick;
-
-            // Add the custom layout to the menu item
             menuItem.actor.add_child(box);
 
             menuItem.connect('activate', () => {
-                this._runCommand([
+                this._runCommand([ 
                     "pkexec",
                     "bash",
                     "-c",
                     `${item.command}`
-                ]).then((result) => {
-                    // Solo actualizamos el estado si el comando fue exitoso
-                    menuItem._tick.visible = true;
-                    this._updateCheckState(index);
-                    this.iconName = item.icon;
-                    this.menu.setHeader(item.icon, _('ThinkPad Red Led Control'), _(''));
-                    this._indicator.icon_name = item.icon;
+                ]).then(() => {
+                        menuItem._tick.visible = true;
+                        this._updateCheckState(index);
+                        this.iconName = item.icon;
+                        this.menu.setHeader(item.icon, _('ThinkPad Red Led Control'), _(''));
+                        this._indicator.icon_name = item.icon;
+                    
                 }).catch((error) => {
-                    // Notificar al usuario sobre el error
-                    Main.notify(_('Error'), _('No se pudo ejecutar el comando. Verifica tus credenciales.'));
+                    Main.notify(_('Error'), _('Could not run the command. Check your credentials.'));
+                    console.error('Error running the command:', error);
                 });
             });
             
-
             this._itemsSection.addMenuItem(menuItem);
         });
 
@@ -90,80 +80,90 @@ class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
         const settingsItem = this.menu.addAction(_('Mensaje en Morse'), () => this._openMorseDialog());
         settingsItem.visible = Main.sessionMode.allowSettings;
         
-        // Initialize check states
-        // Habria que leer el estado del led para saber cual esta activo, pero como hago esto sin sudo?
+        // Would like to read the current state of the led, but it's not possible without root permissions
         this._currentCheckedIndex = 1;
         this._updateCheckState(this._currentCheckedIndex);
     }
 
+
+    /**
+     * Runs a shell command asynchronously.
+     * @param {Array} command - The command to execute, passed as an array of strings.
+     * @returns {Promise} A promise that resolves when the command executes successfully or rejects if it fails.
+     */
     _runCommand(command) {
         return new Promise((resolve, reject) => {
             try {
-                let [success, stdout, stderr, exitCode] = GLib.spawn_sync(
-                    null,    // Current working directory
-                    command, // Command to run
-                    null,    // Environment variables
-                    GLib.SpawnFlags.SEARCH_PATH, // Search in $PATH
-                    null     // Child setup function
+                const [success, pid] = GLib.spawn_async(
+                    null, 
+                    command, 
+                    null, 
+                    GLib.SpawnFlags.SEARCH_PATH, 
+                    null 
                 );
-    
-                if (success && exitCode === 0) {
-                    resolve(stdout.toString());
+
+                if (success) {
+                    resolve();
                 } else {
-                    console.error("Error executing command:", stderr.toString());
-                    reject(new Error(stderr.toString()));
+                    reject(new Error('Failed to run the command.'));
                 }
             } catch (error) {
-                console.error("Spawn failed:", error);
+                console.error('Error running the command:', error);
                 reject(error);
             }
         });
     }
-    
-    
+
+
+    /**
+     * Updates the check state of the menu items to indicate which option is currently active.
+     * @param {number} checkedIndex - The index of the currently selected menu item.
+     */
     _updateCheckState(checkedIndex) {
         this._currentCheckedIndex = checkedIndex;
         this._itemsSection._getMenuItems().forEach((menuItem, index) => {
             menuItem._tick.visible = (index === this._currentCheckedIndex);
         });
-        if (this._currentCheckedIndex === 0) super.subtitle = _('Led Apagado');
-        if (this._currentCheckedIndex === 1) super.subtitle = _('Led Encendido');
-        if (this._currentCheckedIndex === 2) super.subtitle = _('Led Parpadeando');
+        if (this._currentCheckedIndex === 0) super.subtitle = _('Led Off');
+        if (this._currentCheckedIndex === 1) super.subtitle = _('Led On');
+        if (this._currentCheckedIndex === 2) super.subtitle = _('Led Blinking');
     }
 
+
+    /**
+     * Opens a dialog window that allows the user to input text which will be converted to Morse code 
+     * and used to control the LED in a Morse code pattern.
+     * 
+     * The user can input text and upon clicking "Aceptar", the text is converted into a set of shell 
+     * commands that control the LED's on/off state to blink in Morse code.
+     */
     _openMorseDialog() {
-        // Crear el diálogo modal
         let dialog = new ModalDialog.ModalDialog({
-            destroyOnClose: true, // Cerrar el diálogo al destruirlo
-            styleClass: 'my-dialog', // Puedes agregar tu propio estilo si lo necesitas
+            destroyOnClose: true, 
+            styleClass: 'my-dialog',
         });
-    
-        // Crear el área de contenido del diálogo
+
         let contentLayout = dialog.contentLayout;
-    
-        // Etiqueta con la descripción
-        let label = new St.Label({ text: 'Ingrese el texto a emitir en Morse:' });
+
+        let label = new St.Label({ text: 'Enter the text to emit in Morse:' });
         contentLayout.add_child(label);
     
-        // Crear un campo de texto para que el usuario ingrese el mensaje
         let entry = new St.Entry({ name: 'text-entry' });
         contentLayout.add_child(entry);
     
-        // Agregar botones de acción
         dialog.addButton({
-            label: 'Cancelar',
+            label: 'Cancel',
             action: () => {
-                dialog.close(global.get_current_time()); // Cerrar el diálogo sin hacer nada
+                dialog.close(global.get_current_time()); 
             },
         });
     
         dialog.addButton({
-            label: 'Aceptar',
+            label: 'Acept',
             action: () => {
-                const morseText = entry.get_text();  // Obtener el texto ingresado
+                const morseText = entry.get_text(); 
                 log('Texto en Morse:', morseText);
         
-                // Comando completo a ejecutar con pkexec
                 const morseCommands1 = `
                     modprobe -r ec_sys;
                     modprobe ec_sys write_support=1;
@@ -248,58 +248,69 @@ class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
                     modprobe -r ec_sys;`
 
                 const morseCommands = morseCommands1 + morseText + morseCommands2;
-                log('Comandos en Morse:', morseCommands);
         
-                // Ejecutar todo el bloque de comandos con pkexec
                 return new Promise((resolve, reject) => {
                     try {
                         this._runCommand([
                             "pkexec",
                             "bash",
                             "-c",
-                            morseCommands // Todo el bloque de comandos aquí
+                            morseCommands
                         ]);
-                        resolve(); // Resolvemos la promesa si el comando se ejecutó sin errores
+                        resolve(); 
                     } catch (error) {
-                        reject(error); // Rechazamos la promesa si hubo algún error
+                        console.error('Error running the command:', error);
+                        reject(error);
                     }
                 }).then(() => {
-                    dialog.close(global.get_current_time()); // Cerrar el diálogo
+                    dialog.close(global.get_current_time());
                 }).catch((error) => {
-                    console.error("Error ejecutando el comando:", error);
+                    console.error('Error running the command:', error);
                 });
             },
         });
-        
-        // Mostrar el diálogo
+
         dialog.open(global.get_current_time());
-        
     }
-    
 });
 
-const ExampleIndicator = GObject.registerClass(
-class ExampleIndicator extends QuickSettings.SystemIndicator {
+
+/**
+ * Creates an indicator in the GNOME Shell's quick settings panel. 
+ * This indicator represents the LED control menu and allows interaction with it.
+ * 
+ * It adds an icon for the LED control and initializes the LED control menu to interact with the system.
+ */
+const LedControlIndicator = GObject.registerClass(
+class LedControlIndicator extends QuickSettings.SystemIndicator {
     _init(extensionObject) {
         super._init();
-
-        // Create an indicator icon
         this._indicator = this._addIndicator();
         this._indicator.icon_name = 'keyboard-brightness-high-symbolic';
-
-        // Add the toggle to the quick settings menu
-        this.quickSettingsItems.push(new ExampleMenuToggle(extensionObject));
+        this.quickSettingsItems.push(new LedControlMenu(extensionObject, this._indicator));
     }
 });
+    
 
-export default class QuickSettingsExampleExtension extends Extension {
+/**
+ * The main extension class that manages the activation and deactivation of the LED control extension.
+ * 
+ * When the extension is enabled, it adds the LED control indicator to the quick settings panel. 
+ * When disabled, it removes the indicator and cleans up any associated resources.
+ */
+export default class LedControlExtension extends Extension {
+    /**
+     * Enables the extension and adds the LED control indicator to the GNOME Shell quick settings.
+     */
     enable() {
-        this._indicator = new ExampleIndicator(this);
-
-        // Add the indicator to the quick settings menu
+        this._indicator = new LedControlIndicator(this);
         Main.panel.statusArea.quickSettings.addExternalIndicator(this._indicator);
     }
-
+    
+    /**
+     * Disables the extension and removes the LED control indicator from the quick settings.
+     * Cleans up any resources associated with the indicator.
+     */
     disable() {
         if (this._indicator) {
             this._indicator.quickSettingsItems.forEach(item => item.destroy());
@@ -308,4 +319,7 @@ export default class QuickSettingsExampleExtension extends Extension {
         }
     }
 }
+    
+
+
 
