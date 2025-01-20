@@ -1,6 +1,6 @@
 {
     "name": "ThinkPad Red Led",
-    "description": "A GNOME Shell extension to control and customize the ThinkPad red LED directly from the top panelA.",
+    "description": "A GNOME Shell extension to control and customize the ThinkPad red LED directly from the top panel.",
     "uuid": "thinkpad-red-led@juanmagd.dev",
     "shell-version": [
       "46"
