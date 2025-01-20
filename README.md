@@ -79,8 +79,9 @@ Each state change directly manipulates this bit, causing the LED to behave accor
 - Special thanks to **vali20** for the idea on how to control the LED: [ThinkPad LED Control under GNU/Linux](https://www.reddit.com/r/thinkpad/comments/7n8eyu/thinkpad_led_control_under_gnulinux/)
 - Special thanks to **c5e3** for the Morse code script: [Morse Code Script](https://gist.github.com/c5e3/e0264a546b249b635349f2ee6c302f36)
 
-## How to Contribute
-We welcome pull requests! If you find a bug or want to add a feature, feel free to fork the repository, make changes, and submit a pull request. Contributions are always appreciated!
+## Contributing
+I welcome any contributions to improve this extension. Feel free to open pull requests with bug fixes or feature requests. Your contributions are greatly appreciated!
 
-Please refer to the **TODOs** section above for the areas we are actively working on.
+## License
+This project is licensed under the MIT License.
 
