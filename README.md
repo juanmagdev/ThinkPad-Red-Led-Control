@@ -37,16 +37,41 @@ Each state change directly manipulates this bit, causing the LED to behave accor
 
 ### Command Outputs
 
-1. **LED Off**: When the LED is off, the `12th bit` is set to `0x0A`. Here's the corresponding output from `hexdump`:
-``$ sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 8a 01 80 00 |..8D............|``
+1. **LED Off**: When the LED is off, the `12th bit` is set to `0x8A`. Here's the corresponding command and output:
 
-2. **LED Blinking**: When the LED is set to blink, the `12th bit` is set to `0x8A`. Here's the output from `hexdump`:
-``sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 ca 01 80 00 |..8D............|``
+   **Command:**
+   ```bash
+   $ sudo hexdump -C /sys/kernel/debug/ec/ec0/io
+   ```
 
+   **Output:**
+   ```
+   00000000  e4 05 38 44 00 00 06 00  00 08 00 80 8a 01 80 00  |..8D............|
+   ```
 
-3. **LED On**: When the LED is on, the `12th bit` is set to `0x0A`. Here's the output from `hexdump`:
-``$ sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 0a 01 80 00 |..8D............|``
+2. **LED Blinking**: When the LED is set to blink, the `12th bit` is set to `0xCA`. Here's the command and output:
 
+   **Command:**
+   ```bash
+   $ sudo hexdump -C /sys/kernel/debug/ec/ec0/io
+   ```
+
+   **Output:**
+   ```
+   00000000  e4 05 38 44 00 00 06 00  00 08 00 80 ca 01 80 00  |..8D............|
+   ```
+
+3. **LED On**: When the LED is on, the `12th bit` is set to `0x0A`. Here's the command and output:
+
+   **Command:**
+   ```bash
+   $ sudo hexdump -C /sys/kernel/debug/ec/ec0/io
+   ```
+
+   **Output:**
+   ```
+   00000000  e4 05 38 44 00 00 06 00  00 08 00 80 0a 01 80 00  |..8D............|
+   ```
 
 
 
