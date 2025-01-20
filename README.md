@@ -25,6 +25,31 @@ The extension interacts directly with the kernel to manage the LED states via co
 ## How It Works
 The extension modifies the state of the ThinkPad LED light through the **ec_sys** module in the Linux kernel. Depending on the command chosen (off, on, or blinking), the appropriate command is executed via `pkexec` to manage the LED state. The Morse code functionality sends a sequence of on/off commands to the LED light to represent each character in the entered message.
 
+## How It Works
+The extension modifies the state of the ThinkPad LED light through the **ec_sys** module in the Linux kernel. Depending on the command chosen (off, on, or blinking), the appropriate command is executed via `pkexec` to manage the LED state. 
+
+The LED control relies on manipulating specific bits in the kernel I/O interface. For example:
+
+- **LED On**: The state of the LED is represented by the **12th bit** being set to a certain value (`0x0A`).
+- **LED Blinking**: This is controlled by modifying the **12th bit**, where it is set to `0x8A` for blinking.
+
+Each state change directly manipulates this bit, causing the LED to behave according to the selected mode.
+
+### Command Outputs
+
+1. **LED Off**: When the LED is off, the `12th bit` is set to `0x0A`. Here's the corresponding output from `hexdump`:
+``$ sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 8a 01 80 00 |..8D............|``
+
+2. **LED Blinking**: When the LED is set to blink, the `12th bit` is set to `0x8A`. Here's the output from `hexdump`:
+``sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 ca 01 80 00 |..8D............|``
+
+
+3. **LED On**: When the LED is on, the `12th bit` is set to `0x0A`. Here's the output from `hexdump`:
+``$ sudo hexdump -C /sys/kernel/debug/ec/ec0/io 00000000 e4 05 38 44 00 00 06 00 00 08 00 80 0a 01 80 00 |..8D............|``
+
+
+
+
 ## Credits
 - Special thanks to **vali20** for the idea on how to control the LED: [ThinkPad LED Control under GNU/Linux](https://www.reddit.com/r/thinkpad/comments/7n8eyu/thinkpad_led_control_under_gnulinux/)
 - Special thanks to **c5e3** for the Morse code script: [Morse Code Script](https://gist.github.com/c5e3/e0264a546b249b635349f2ee6c302f36)
