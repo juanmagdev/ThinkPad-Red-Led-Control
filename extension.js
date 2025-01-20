@@ -19,19 +19,19 @@ class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
         super._init({
             title: _('Led Control'),
             subtitle: _('Led Encendido'),
-            iconName: 'stock-eye-symbolic',
+            iconName: 'keyboard-brightness-high-symbolic',
             toggleMode: true,
         });
 
         // Add a header to the menu
-        this.menu.setHeader('stock-eye-symbolic', _('ThinkPad Red Led Control'), _(''));
+        this.menu.setHeader('keyboard-brightness-high-symbolic', _('ThinkPad Red Led Control'), _(''));
 
         // Define menu items with icons
         this._itemsSection = new PopupMenu.PopupMenuSection();
         this._menuItems = [
-            { label: _(' Led Apagado '), icon: 'media-playback-stop-symbolic', command: COMANDO_APAGADO },
-            { label: _(' Led Encendido '), icon: 'media-playback-start-symbolic', command: COMANDO_ENCENDIDO },
-            { label: _(' Led Parpadeando '), icon: 'media-playlist-repeat-symbolic', command: COMANDO_PARPADEO },
+            { label: _('  Led Apagado  '), icon: 'keyboard-brightness-off-symbolic', command: COMANDO_APAGADO },
+            { label: _('  Led Encendido  '), icon: 'keyboard-brightness-high-symbolic', command: COMANDO_ENCENDIDO },
+            { label: _('  Led Parpadeando  '), icon: 'keyboard-brightness-medium-symbolic', command: COMANDO_PARPADEO },
         ];
 
         // Create menu items with icons and add them to the menu
@@ -60,20 +60,25 @@ class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
             // Add the custom layout to the menu item
             menuItem.actor.add_child(box);
 
-            // Connect activation event
             menuItem.connect('activate', () => {
                 this._runCommand([
                     "pkexec",
                     "bash",
                     "-c",
                     `${item.command}`
-                ]).then(() => {
-                    this._updateCheckState(index);
+                ]).then((result) => {
+                    // Solo actualizamos el estado si el comando fue exitoso
                     menuItem._tick.visible = true;
+                    this._updateCheckState(index);
+                    this.iconName = item.icon;
+                    this.menu.setHeader(item.icon, _('ThinkPad Red Led Control'), _(''));
+                    this._indicator.icon_name = item.icon;
                 }).catch((error) => {
-                    console.error("Error executing command:", error);
+                    // Notificar al usuario sobre el error
+                    Main.notify(_('Error'), _('No se pudo ejecutar el comando. Verifica tus credenciales.'));
                 });
             });
+            
 
             this._itemsSection.addMenuItem(menuItem);
         });
@@ -94,14 +99,28 @@ class ExampleMenuToggle extends QuickSettings.QuickMenuToggle {
     _runCommand(command) {
         return new Promise((resolve, reject) => {
             try {
-                GLib.spawn_async(null, command, null, GLib.SpawnFlags.SEARCH_PATH, null);
-                resolve(); // Resolvemos la promesa si el comando se ejecutó sin errores
+                let [success, stdout, stderr, exitCode] = GLib.spawn_sync(
+                    null,    // Current working directory
+                    command, // Command to run
+                    null,    // Environment variables
+                    GLib.SpawnFlags.SEARCH_PATH, // Search in $PATH
+                    null     // Child setup function
+                );
+    
+                if (success && exitCode === 0) {
+                    resolve(stdout.toString());
+                } else {
+                    console.error("Error executing command:", stderr.toString());
+                    reject(new Error(stderr.toString()));
+                }
             } catch (error) {
-                reject(error); // Rechazamos la promesa si hubo algún error
+                console.error("Spawn failed:", error);
+                reject(error);
             }
         });
     }
-
+    
+    
     _updateCheckState(checkedIndex) {
         this._currentCheckedIndex = checkedIndex;
         this._itemsSection._getMenuItems().forEach((menuItem, index) => {
@@ -266,7 +285,7 @@ class ExampleIndicator extends QuickSettings.SystemIndicator {
 
         // Create an indicator icon
         this._indicator = this._addIndicator();
-        this._indicator.icon_name = 'stock-eye-symbolic';
+        this._indicator.icon_name = 'keyboard-brightness-high-symbolic';
 
         // Add the toggle to the quick settings menu
         this.quickSettingsItems.push(new ExampleMenuToggle(extensionObject));
