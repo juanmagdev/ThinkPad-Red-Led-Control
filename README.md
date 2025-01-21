@@ -1,6 +1,8 @@
 # ThinkPad Red LED Control Extension for GNOME
 
-![ThinkPad LED Control Screenshot](img/screenshot.png)
+<p align="center">
+  <img src="img/screenshot.png" alt="ThinkPad LED Control Screenshot">
+</p>
 
 This GNOME Shell extension allows you to control the red LED light on ThinkPad keyboards. With this extension, you can toggle between different LED states such as:
 
