@@ -1,5 +1,7 @@
 # ThinkPad Red LED Control Extension for GNOME
 
+![ThinkPad LED Control Screenshot](img/screenshot.png)
+
 This GNOME Shell extension allows you to control the red LED light on ThinkPad keyboards. With this extension, you can toggle between different LED states such as:
 
 - **LED Off**
@@ -21,9 +23,6 @@ The extension interacts directly with the kernel to manage the LED states via co
 - **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
 - **Fix Known Bugs**: Resolve issues with UI state updates, reading LED state, and state resetting after a reboot.
 - **Interface to Control Morse Code Blinking Speed**: Implement a user interface to allow users to customize the speed of the Morse code blinking.
-
-## How It Works
-The extension modifies the state of the ThinkPad LED light through the **ec_sys** module in the Linux kernel. Depending on the command chosen (off, on, or blinking), the appropriate command is executed via `pkexec` to manage the LED state. The Morse code functionality sends a sequence of on/off commands to the LED light to represent each character in the entered message.
 
 ## How It Works
 The extension modifies the state of the ThinkPad LED light through the **ec_sys** module in the Linux kernel. Depending on the command chosen (off, on, or blinking), the appropriate command is executed via `pkexec` to manage the LED state. 

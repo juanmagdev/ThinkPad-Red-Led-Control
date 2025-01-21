@@ -159,7 +159,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         });
     
         dialog.addButton({
-            label: 'Acept',
+            label: 'Accept',
             action: () => {
                 const morseText = entry.get_text(); 
                 log('Texto en Morse:', morseText);
