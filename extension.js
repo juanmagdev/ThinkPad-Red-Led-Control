@@ -108,7 +108,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
                     return;
                 }
 
-                // Leer la salida del proceso
+                // Read the output of the command
                 let stdoutStream = new Gio.DataInputStream({ base_stream: new Gio.UnixInputStream({ fd: stdout, close_fd: true }) });
                 let stderrStream = new Gio.DataInputStream({ base_stream: new Gio.UnixInputStream({ fd: stderr, close_fd: true }) });
 
@@ -129,7 +129,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
                 readStream(stdoutStream, (text) => { output += text + "\n"; });
                 readStream(stderrStream, (text) => { errorOutput += text + "\n"; });
 
-                // Monitorear la finalización del proceso
+                // Monitor the command's exit status
                 GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, (pid, status) => {
                     if (GLib.spawn_check_exit_status(status)) {
                         if (errorOutput.includes("Error executing command as another user: Request dismissed")) {
