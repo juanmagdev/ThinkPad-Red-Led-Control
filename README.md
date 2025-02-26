@@ -21,7 +21,7 @@ The extension interacts directly with the kernel to manage the LED states via co
 
 ## TODOs
 - **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
-- **Fix Known Bugs**: Resolve issues with UI state updates, reading LED state, and state resetting after a reboot.
+- **Fix Known Bugs**: Resolve issues related with the state resetting after a reboot.
 - **Interface to Control Morse Code Blinking Speed**: Implement a user interface to allow users to customize the speed of the Morse code blinking.
 
 ## How It Works
