@@ -1,5 +1,6 @@
 import GObject from 'gi://GObject';
 import GLib from 'gi://GLib';
+import Gio from 'gi://Gio';
 import St from 'gi://St';
 import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -12,6 +13,7 @@ import { Extension, gettext as _ } from 'resource:///org/gnome/shell/extensions/
 const OFF_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x0a' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
 const ON_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\x8a' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
 const BLINK_COMAND = "modprobe -r ec_sys && modprobe ec_sys write_support=1 && printf '\\xca' | dd of=/sys/kernel/debug/ec/ec0/io bs=1 seek=12 count=1 conv=notrunc";
+
 
 const LedControlMenu = GObject.registerClass(
 class LedControlMenu extends QuickSettings.QuickMenuToggle {
@@ -85,28 +87,61 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         this._updateCheckState(this._currentCheckedIndex);
     }
 
-
     /**
-     * Runs a shell command asynchronously.
+     * Runs a shell command asynchronously and checks its output.
      * @param {Array} command - The command to execute, passed as an array of strings.
-     * @returns {Promise} A promise that resolves when the command executes successfully or rejects if it fails.
+     * @returns {Promise} Resolves if the command executes successfully, rejects otherwise.
      */
     _runCommand(command) {
         return new Promise((resolve, reject) => {
             try {
-                const [success, pid] = GLib.spawn_async(
-                    null, 
-                    command, 
-                    null, 
-                    GLib.SpawnFlags.SEARCH_PATH, 
-                    null 
+                let [success, pid, stdin, stdout, stderr] = GLib.spawn_async_with_pipes(
+                    null,
+                    command,
+                    null,
+                    GLib.SpawnFlags.SEARCH_PATH | GLib.SpawnFlags.DO_NOT_REAP_CHILD,
+                    null
                 );
 
-                if (success) {
-                    resolve();
-                } else {
-                    reject(new Error('Failed to run the command.'));
+                if (!success) {
+                    reject(new Error('Failed to start the command.'));
+                    return;
                 }
+
+                // Leer la salida del proceso
+                let stdoutStream = new Gio.DataInputStream({ base_stream: new Gio.UnixInputStream({ fd: stdout, close_fd: true }) });
+                let stderrStream = new Gio.DataInputStream({ base_stream: new Gio.UnixInputStream({ fd: stderr, close_fd: true }) });
+
+                let output = "";
+                let errorOutput = "";
+
+                function readStream(stream, callback) {
+                    stream.read_line_async(GLib.PRIORITY_DEFAULT, null, (source, res) => {
+                        let [line, length] = source.read_line_finish(res);
+                        if (line) {
+                            let text = ByteArray.toString(line);
+                            callback(text);
+                            readStream(stream, callback);
+                        }
+                    });
+                }
+
+                readStream(stdoutStream, (text) => { output += text + "\n"; });
+                readStream(stderrStream, (text) => { errorOutput += text + "\n"; });
+
+                // Monitorear la finalización del proceso
+                GLib.child_watch_add(GLib.PRIORITY_DEFAULT, pid, (pid, status) => {
+                    if (GLib.spawn_check_exit_status(status)) {
+                        if (errorOutput.includes("Error executing command as another user: Request dismissed")) {
+                            reject(new Error("User cancelled the authentication."));
+                        } else {
+                            resolve();
+                        }
+                    } else {
+                        reject(new Error(`Command failed with status ${status}\n${errorOutput}`));
+                    }
+                });
+
             } catch (error) {
                 console.error('Error running the command:', error);
                 reject(error);
@@ -134,7 +169,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
      * Opens a dialog window that allows the user to input text which will be converted to Morse code 
      * and used to control the LED in a Morse code pattern.
      * 
-     * The user can input text and upon clicking "Aceptar", the text is converted into a set of shell 
+     * The user can input text and upon clicking "Accept", the text is converted into a set of shell 
      * commands that control the LED's on/off state to blink in Morse code.
      */
     _openMorseDialog() {
@@ -145,7 +180,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
 
         let contentLayout = dialog.contentLayout;
 
-        let label = new St.Label({ text: 'Enter the text to emit in Morse:' });
+        let label = new St.Label({ text: 'Enter the text to emit in Morse (0-9a-z):' });
         contentLayout.add_child(label);
     
         let entry = new St.Entry({ name: 'text-entry' });
@@ -161,6 +196,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         dialog.addButton({
             label: 'Accept',
             action: () => {
+                dialog.close(global.get_current_time());
                 const morseText = entry.get_text(); 
                 log('Texto en Morse:', morseText);
         
@@ -251,13 +287,29 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         
                 return new Promise((resolve, reject) => {
                     try {
+                        this._updateCheckState(0);
+                        this.iconName = 'keyboard-brightness-medium-symbolic';
+                        this.menu.setHeader('keyboard-brightness-medium-symbolic', _('ThinkPad Red Led Control'), _(''));
+                        this._indicator.icon_name = 'keyboard-brightness-medium-symbolic';
+                        this.subtitle = 'Morsing...  ';
+
                         this._runCommand([
                             "pkexec",
                             "bash",
                             "-c",
                             morseCommands
-                        ]);
-                        resolve(); 
+                        ]).then(() => {
+                            this._updateCheckState(1);
+                            this.iconName = 'keyboard-brightness-high-symbolic';
+                            this.menu.setHeader('keyboard-brightness-high-symbolic', _('ThinkPad Red Led Control'), _(''));
+                            this._indicator.icon_name = 'keyboard-brightness-high-symbolic';
+                            resolve(); 
+                        
+                        }).catch((error) => {
+                            Main.notify(_('Error'), _('Could not run the command. Check your credentials.'));
+                            console.error('Error running the command:', error);
+                        });
+
                     } catch (error) {
                         console.error('Error running the command:', error);
                         reject(error);
