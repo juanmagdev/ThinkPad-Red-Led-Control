@@ -16,12 +16,11 @@ The extension interacts directly with the kernel to manage the LED states via co
 - **LED Control**: You can turn the LED on, off, or make it blink.
 - **Morse Code Message**: You can input a text message, and the extension will flash the LED according to Morse code, providing a fun and functional way to communicate messages via the LED light.
 
-## Known Bugs
-- **State Reset After Restart**: After a system reboot, the LED state is reset to the default (LED On).
-
 ## TODOs
+- **Give support to other Gnome Versions**: Give support to GNOME 47. 
 - **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
-- **Fix Known Bugs**: Resolve issues related with the state resetting after a reboot.
+- **Add Persistence**: Resolve issues related with the state resetting after a reboot.
+- **Add more languages**: Only english is supported righ now.
 - **Interface to Control Morse Code Blinking Speed**: Implement a user interface to allow users to customize the speed of the Morse code blinking.
 
 ## How It Works
