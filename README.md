@@ -18,6 +18,7 @@ The extension interacts directly with the kernel to manage the LED states via co
 
 ## TODOs
 - **Give support to other Gnome Versions**: Give support to GNOME 47. 
+- **Support to other thinkpad laptops**: For now, it's just tested with Thinkpad E16 Gen2 Intel. Should be great do a list with tested devices and if are working propertly or not. 
 - **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
 - **Add Persistence**: Resolve issues related with the state resetting after a reboot.
 - **Add more languages**: Only english is supported righ now.
