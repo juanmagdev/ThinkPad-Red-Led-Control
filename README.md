@@ -18,11 +18,11 @@ The extension interacts directly with the kernel to manage the LED states via co
 
 ## TODOs
 - [x] **Give support to other Gnome Versions**: Give support to GNOME 47. 
-- [ ]**Support to other thinkpad laptops**: For now, it's just tested with Thinkpad E16 Gen2 Intel. Should be great do a list with tested devices and if are working propertly or not. 
-- [ ]**Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
-- [ ]**Add Persistence**: Resolve issues related with the state resetting after a reboot.
-- [ ]**Add more languages**: Only english is supported righ now.
-- ~~[ ]**Interface to Control Morse Code Blinking Speed**: Implement a user interface to allow users to customize the speed of the Morse code blinking.~~
+- [ ] **Support to other thinkpad laptops**: For now, it's just tested with Thinkpad E16 Gen2 Intel. Should be great do a list with tested devices and if are working propertly or not. 
+- [ ] **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
+- [ ] **Add Persistence**: Resolve issues related with the state resetting after a reboot.
+- [ ] **Add more languages**: Only english is supported righ now.
+- [ ] **Interface to Control Morse Code Blinking Speed**: Implement a user interface to allow users to customize the speed of the Morse code blinking.
 
 ## How It Works
 The extension modifies the state of the ThinkPad LED light through the **ec_sys** module in the Linux kernel. Depending on the command chosen (off, on, or blinking), the appropriate command is executed via `pkexec` to manage the LED state. 
