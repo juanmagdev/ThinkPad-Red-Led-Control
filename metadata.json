@@ -3,7 +3,7 @@
     "description": "A GNOME Shell extension to control and customize the ThinkPad red LED directly from the top panel. It allows you to turn on/off the LED, blink it and send morse code messages.",
     "uuid": "thinkpad-red-led@juanmagd.dev",
     "shell-version": [
-      "46", "47"
+      "46", "47", "48"
     ],
     "gettext-domain": "juanmagd.dev",
     "url": "https://github.com/juanmagdev/ThinkPad-Red-Led-Control",
