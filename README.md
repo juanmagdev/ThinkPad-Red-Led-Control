@@ -18,7 +18,12 @@ The extension interacts directly with the kernel to manage the LED states via co
 
 This extension is available on [GNOME Extensions Website](https://extensions.gnome.org/extension/7820/thinkpad-red-led/).
 
-[![ThinkPad Thermal on extensions.gnome.org](img/ego.svg)](https://extensions.gnome.org/extension/7820/thinkpad-red-led/)
+<p align="center">
+  <a href="https://extensions.gnome.org/extension/7820/thinkpad-red-led/">
+    <img src="img/ego.svg" alt="GNOME Extensions Website">
+  </a>
+</p>
+
 
 ## Features
 - **LED Control**: You can turn the LED on, off, or make it blink.
