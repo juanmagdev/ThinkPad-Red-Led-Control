@@ -12,13 +12,20 @@ This GNOME Shell extension allows you to control the red LED light on the back o
 
 The extension interacts directly with the kernel to manage the LED states via commands that control the **ec_sys** module.
 
+## Install
+
+### GNOME Extensions Website
+
+This extension is available on [GNOME Extensions Website](https://extensions.gnome.org/extension/7820/thinkpad-red-led/).
+
+[![ThinkPad Thermal on extensions.gnome.org](img/ego.svg)](https://extensions.gnome.org/extension/7820/thinkpad-red-led/)
+
 ## Features
 - **LED Control**: You can turn the LED on, off, or make it blink.
 - **Morse Code Message**: You can input a text message, and the extension will flash the LED according to Morse code, providing a fun and functional way to communicate messages via the LED light.
 
 ## TODOs
-- [x] **Give support to other Gnome Versions**: Give support to GNOME 47. 
-- [ ] **Support to other thinkpad laptops**: For now, it's just tested with Thinkpad E16 Gen2 Intel. Should be great do a list with tested devices and if are working propertly or not. 
+- [x] **Give support to other Gnome Versions**: Give support to GNOME 47, 48
 - [ ] **Support for Uppercase and Special Characters in Morse Code**: Currently, only lowercase letters and numbers are supported for Morse code. Uppercase letters and special characters need to be handled.
 - [ ] **Add Persistence**: Resolve issues related with the state resetting after a reboot.
 - [ ] **Add more languages**: Only english is supported righ now.
