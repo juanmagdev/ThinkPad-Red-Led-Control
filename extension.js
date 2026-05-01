@@ -33,7 +33,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
             title: _('Led Control'),
             subtitle: _('Led On'),
             iconName: 'keyboard-brightness-high-symbolic',
-            toggleMode: false,
+            toggleMode: true,
         });
 
         this._indicator = indicator;
@@ -58,17 +58,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
             menuItem.actor.add_child(box);
 
             menuItem.connect('activate', () => {
-                const previousIndex = this._currentCheckedIndex;
-                this._setPendingState(item.icon, _('Applying...'));
-                this._runHelperCommand([item.action]).then(() => {
-                        this._setState(index, item.icon, item.label.trim(), menuItem);
-                }).catch((error) => {
-                    if (!error?.handled) {
-                        Main.notify(_('Error'), _('Could not run the command.'));
-                    }
-                    console.error('Error running the command:', error);
-                    this._setState(previousIndex, this._menuItems[previousIndex].icon, this._menuItems[previousIndex].label.trim());
-                });
+                this._applyAction(index, menuItem);
             });
             
             this._itemsSection.addMenuItem(menuItem);
@@ -84,7 +74,9 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         morseItem.visible = Main.sessionMode.allowSettings;
         
         this._currentCheckedIndex = 1;
+        this._busy = false;
         this._applySavedState();
+        this.connect('clicked', () => this._toggleFromButton());
     }
 
     /**
@@ -264,6 +256,42 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
         this._setState(index, item.icon, item.label.trim());
     }
 
+    _applyAction(index, menuItem = null) {
+        if (this._busy) {
+            return;
+        }
+
+        const item = this._menuItems[index];
+        if (!item) {
+            return;
+        }
+
+        const previousIndex = this._currentCheckedIndex;
+        const previousItem = this._menuItems[previousIndex];
+
+        this._busy = true;
+        this._setPendingState(item.icon, _('Applying...'));
+
+        this._runHelperCommand([item.action]).then(() => {
+            this._setState(index, item.icon, item.label.trim(), menuItem);
+            this._busy = false;
+        }).catch((error) => {
+            if (!error?.handled) {
+                Main.notify(_('Error'), _('Could not run the command.'));
+            }
+            console.error('Error running the command:', error);
+            if (previousItem) {
+                this._setState(previousIndex, previousItem.icon, previousItem.label.trim());
+            }
+            this._busy = false;
+        });
+    }
+
+    _toggleFromButton() {
+        const targetIndex = this._currentCheckedIndex === 0 ? 1 : 0;
+        this._applyAction(targetIndex);
+    }
+
 
     /**
      * Updates the check state of the menu items to indicate which option is currently active.
@@ -271,6 +299,7 @@ class LedControlMenu extends QuickSettings.QuickMenuToggle {
      */
     _updateCheckState(checkedIndex) {
         this._currentCheckedIndex = checkedIndex;
+        this.checked = this._currentCheckedIndex !== 0;
         this._itemsSection._getMenuItems().forEach((menuItem, index) => {
             menuItem._tick.visible = (index === this._currentCheckedIndex);
         });
